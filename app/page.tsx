@@ -182,7 +182,6 @@ export default function Home() {
     setReflections((prev) => ({ ...prev, [promptId]: value }));
   };
 
-
   const handleNext = () => {
     setStep((prev) => Math.min(prev + 1, categories.length));
   };
@@ -213,7 +212,11 @@ export default function Home() {
     const contentWidth = pageWidth - margin * 2;
 
     const chartElement = exportChartRef.current;
-    let chartImageData: { dataUrl: string; width: number; height: number } | null = null;
+    let chartImageData: {
+      dataUrl: string;
+      width: number;
+      height: number;
+    } | null = null;
 
     if (chartElement) {
       try {
@@ -229,7 +232,9 @@ export default function Home() {
         svgClone.setAttribute('height', `${exportHeight}`);
         svgClone.setAttribute(
           'viewBox',
-          `${bbox.x - exportPadding} ${bbox.y - exportPadding} ${exportWidth} ${exportHeight}`
+          `${bbox.x - exportPadding} ${
+            bbox.y - exportPadding
+          } ${exportWidth} ${exportHeight}`
         );
 
         const serializer = new XMLSerializer();
@@ -286,11 +291,9 @@ export default function Home() {
 
     pdf.setFont('helvetica', 'normal');
     pdf.setFontSize(11);
-    pdf.text(
-      `Completed on ${new Date().toLocaleDateString()}`,
-      margin,
-      margin + 34
-    );
+    const completedOn = new Date();
+    const formattedDate = completedOn.toLocaleDateString('en-GB');
+    pdf.text(`Completed on ${formattedDate}`, margin, margin + 34);
 
     let cursorY = margin + 78;
 
@@ -300,7 +303,14 @@ export default function Home() {
       const chartWidth = chartImageData.width * scale;
       const chartHeight = chartImageData.height * scale;
       const chartX = margin + (contentWidth - chartWidth) / 2;
-      pdf.addImage(chartImageData.dataUrl, 'PNG', chartX, cursorY, chartWidth, chartHeight);
+      pdf.addImage(
+        chartImageData.dataUrl,
+        'PNG',
+        chartX,
+        cursorY,
+        chartWidth,
+        chartHeight
+      );
 
       cursorY += chartHeight + 40;
     }
@@ -328,10 +338,11 @@ export default function Home() {
       const hasNote = trimmedNote.length > 0;
       const noteLines = hasNote
         ? pdf.splitTextToSize(trimmedNote, maxLineWidth)
-        : ['No notes recorded.'];
-      const noteHeight = noteLines.length * noteLineHeight;
+        : [];
+      const noteHeight = hasNote ? noteLines.length * noteLineHeight : 0;
       const trailingSpacing = index < categories.length - 1 ? blockSpacing : 0;
-      const entryHeight = labelSpacing + scoreSpacing + noteHeight + trailingSpacing;
+      const entryHeight =
+        labelSpacing + scoreSpacing + noteHeight + trailingSpacing;
 
       if (cursorY + entryHeight > pageHeight - margin) {
         pdf.addPage();
@@ -349,10 +360,12 @@ export default function Home() {
       pdf.text(`Score: ${scoreValue}/10`, margin, cursorY);
       cursorY += scoreSpacing;
 
-      pdf.setFont('helvetica', 'normal');
-      pdf.setFontSize(bodyFontSize);
-      pdf.text(noteLines, margin, cursorY);
-      cursorY += noteHeight;
+      if (hasNote) {
+        pdf.setFont('helvetica', 'normal');
+        pdf.setFontSize(bodyFontSize);
+        pdf.text(noteLines, margin, cursorY);
+        cursorY += noteHeight;
+      }
 
       cursorY += trailingSpacing;
     });
@@ -412,11 +425,12 @@ export default function Home() {
             Wheel of Life
           </h1>
 
-          <p className="mx-auto max-w-3xl text-base text-slate-600 sm:text-lg">
+          <p className="mx-auto max-w-4xl text-md text-slate-600 sm:text-lg">
             Completing this exercise gives you a foundation on which to build
             and grow. Take a moment to rate how satisfied you are in each area,
             notice what feels out of balance, and capture the next steps you
-            would like to take.
+            would like to take. A PDF report will be available to download once
+            you complete the exercise.
           </p>
         </header>
 
@@ -428,7 +442,7 @@ export default function Home() {
         >
           <div className="space-y-6">
             <Card>
-              <CardHeader className="pb-0">
+              <CardHeader className="relative pb-0 lg:pr-48">
                 <CardDescription className="text-xs font-medium uppercase text-slate-500">
                   {isComplete
                     ? 'Review'
@@ -443,6 +457,14 @@ export default function Home() {
                   <CardDescription className="text-slate-600">
                     {activeCategory.description}
                   </CardDescription>
+                )}
+                {isComplete && (
+                  <div className="hidden gap-3 lg:absolute lg:right-6 lg:top-6 lg:flex">
+                    <Button onClick={handleDownloadPdf}>Download PDF</Button>
+                    <Button variant="outline" onClick={handleReset}>
+                      Start again
+                    </Button>
+                  </div>
                 )}
               </CardHeader>
               <CardContent className="mt-6 space-y-6">
@@ -520,6 +542,12 @@ export default function Home() {
                       wheel evolves. Share your reflections with your coach to
                       keep your momentum.
                     </div>
+                    <div className="flex flex-wrap items-center gap-3 lg:hidden">
+                      <Button onClick={handleDownloadPdf}>Download PDF</Button>
+                      <Button variant="outline" onClick={handleReset}>
+                        Start again
+                      </Button>
+                    </div>
                     <div className="space-y-4">
                       <div className="rounded-xl border border-slate-200 p-4">
                         <h2 className="text-lg font-semibold text-slate-800">
@@ -537,7 +565,9 @@ export default function Home() {
                           </div>
                           <ul className="w-full max-w-[520px] space-y-3 text-md text-slate-600">
                             {categories.map((category) => {
-                              const note = (reflections[category.id] ?? '').trim();
+                              const note = (
+                                reflections[category.id] ?? ''
+                              ).trim();
                               return (
                                 <li
                                   key={category.id}
@@ -584,12 +614,6 @@ export default function Home() {
                         </div>
                       </div>
                     </div>
-                    <div className="flex flex-wrap items-center gap-3">
-                      <Button onClick={handleDownloadPdf}>Download PDF</Button>
-                      <Button variant="outline" onClick={handleReset}>
-                        Start again
-                      </Button>
-                    </div>
                   </div>
                 )}
               </CardContent>
@@ -599,13 +623,23 @@ export default function Home() {
               <Card>
                 <CardHeader>
                   <CardTitle className="text-lg">Why this rating?</CardTitle>
-                  <CardDescription>
+                  <CardDescription className="pb-2">
                     Capture any thoughts you want to revisit with your coach
-                    later. This can be edited at the end of the exercise.
+                    later.
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
+                  <label
+                    htmlFor={`notes-${activeCategory.id}`}
+                    className="mb-2 flex items-baseline justify-between text-sm font-medium text-slate-700"
+                  >
+                    <span>Notes</span>
+                    <span className="font-normal text-slate-500">
+                      (optional)
+                    </span>
+                  </label>
                   <Textarea
+                    id={`notes-${activeCategory.id}`}
                     rows={4}
                     placeholder="What feels satisfying here? What feels like it needs attention?"
                     value={reflections[activeCategory.id] ?? ''}

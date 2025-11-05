@@ -173,6 +173,7 @@ export function WheelChart({ categories, scores, size = 360, className, svgRef }
       height={size}
       viewBox={`0 0 ${size} ${size}`}
       className={cn("mx-auto block overflow-visible", className)}
+      fontFamily="Helvetica, Arial, sans-serif"
       ref={svgRef}
     >
       <defs>
