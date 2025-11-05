@@ -367,10 +367,11 @@ export default function Home() {
 
     addScoresNotesHeading('Scores & notes');
 
-    const labelSpacing = 12;
-    const scoreSpacing = 12;
-    const noteLineHeight = 15;
-    const blockSpacing = 18;
+    const labelSpacing = 14;
+    const scoreSpacing = 10;
+    const noteLineHeight = 14;
+    const noteGap = 10;
+    const blockSpacing = 14;
     const bodyFontSize = 11.5;
 
     categories.forEach((category, index) => {
@@ -382,7 +383,7 @@ export default function Home() {
         ? pdf.splitTextToSize(trimmedNote, maxLineWidth)
         : [];
       const noteHeight = hasNote ? noteLines.length * noteLineHeight : 0;
-      const noteSpacing = hasNote ? labelSpacing : 0;
+      const noteSpacing = hasNote ? noteGap : 0;
       const trailingSpacing = index < categories.length - 1 ? blockSpacing : 0;
       const entryHeight =
         labelSpacing + scoreSpacing + noteSpacing + noteHeight + trailingSpacing;
