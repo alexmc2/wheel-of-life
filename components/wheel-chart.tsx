@@ -72,21 +72,30 @@ function createRingPath(
 
 export function WheelChart({ categories, scores, size = 360, className, svgRef }: WheelChartProps) {
   const center = size / 2;
-  const ringPadding = Math.max(28, size * 0.1);
+  const ringPadding = Math.max(36, size * 0.12);
   const outerRadius = center - ringPadding;
   const ringThickness = Math.max(24, outerRadius * 0.24);
   const valueMaxRadius = outerRadius - ringThickness;
   const gridLevels = 5;
   const isCompact = size <= 280;
+  const isMobileish = size <= 320;
   const labelFontSize = Math.round(
     isCompact ? Math.max(11, size * 0.05) : Math.max(13, size * 0.048),
   );
   const scoreFontSize = Math.round(
     isCompact ? Math.max(10, size * 0.044) : Math.max(12, size * 0.042),
   );
-  const labelOffset = isCompact ? Math.max(10, size * 0.034) : Math.max(14, size * 0.038);
-  const scoreOffset = isCompact ? Math.max(12, size * 0.04) : Math.max(18, size * 0.044);
-  const labelDistance = isCompact ? Math.max(18, size * 0.065) : Math.max(26, size * 0.07);
+  const labelOffset = isCompact
+    ? Math.max(8, size * 0.032)
+    : Math.max(14, size * 0.038);
+  const scoreOffset = isCompact
+    ? Math.max(10, size * 0.036)
+    : Math.max(18, size * 0.042);
+  const labelDistance = isMobileish
+    ? Math.max(28, size * 0.078)
+    : Math.max(30, size * 0.074);
+
+  const labelLineHeight = Math.round(labelFontSize * 1.12);
 
   const processed = React.useMemo(() => {
     if (categories.length === 0) return [];
@@ -105,14 +114,6 @@ export function WheelChart({ categories, scores, size = 360, className, svgRef }
         : `M ${center} ${center} ${createSectorPath(center, valueRadius, startAngle, endAngle)}`;
 
       const textBase = toCartesian(center, outerRadius + labelDistance, midAngle);
-      const labelPoint = {
-        x: textBase.x,
-        y: textBase.y - labelOffset,
-      };
-      const scoreLabelPoint = {
-        x: textBase.x,
-        y: textBase.y + scoreOffset,
-      };
 
       const horizontalAlignment = Math.cos(midAngle);
       const anchor: TextAnchor = Math.abs(horizontalAlignment) < 0.1
@@ -123,14 +124,22 @@ export function WheelChart({ categories, scores, size = 360, className, svgRef }
 
       const scorePoint = toCartesian(center, valueRadius, midAngle);
 
-      let displayLabel = category.label;
-      if (size <= 260) {
+      const labelLines: string[] = (() => {
         if (category.label === "Personal Growth") {
-          displayLabel = "Growth";
-        } else if (category.label === "Relationships") {
-          displayLabel = "R/ships";
+          return size <= 360 ? ["Personal", "Growth"] : [category.label];
         }
-      }
+        if (category.label === "Relationships" && size <= 320) {
+          return ["R/ships"];
+        }
+        return [category.label];
+      })();
+
+      const totalLabelHeight = labelLines.length > 1 ? (labelLines.length - 1) * labelLineHeight : 0;
+      const labelMidY = textBase.y - labelOffset;
+      const scoreLabelPoint = {
+        x: textBase.x,
+        y: textBase.y + scoreOffset + totalLabelHeight / 2,
+      };
 
       return {
         category,
@@ -139,12 +148,15 @@ export function WheelChart({ categories, scores, size = 360, className, svgRef }
         midAngle,
         ringPath,
         valuePath,
-        labelPoint,
         anchor,
         scorePoint,
         scoreLabelPoint,
         normalized,
-        displayLabel,
+        labelMidY,
+        labelX: textBase.x,
+        labelLines,
+        totalLabelHeight,
+        labelLineHeight,
       };
     });
   }, [
@@ -157,6 +169,7 @@ export function WheelChart({ categories, scores, size = 360, className, svgRef }
     labelDistance,
     labelOffset,
     scoreOffset,
+    labelLineHeight,
   ]);
 
   const gridRadii = React.useMemo(
@@ -227,6 +240,7 @@ export function WheelChart({ categories, scores, size = 360, className, svgRef }
       {processed.map((item) => {
         const score = scores[item.category.id] ?? 0;
         const dotRadius = Math.max(2.5, item.normalized * 5);
+        const labelStartY = item.labelMidY - item.totalLabelHeight / 2;
         return (
           <g key={`label-${item.category.id}`}>
             {item.normalized > 0 && (
@@ -240,15 +254,22 @@ export function WheelChart({ categories, scores, size = 360, className, svgRef }
               />
             )}
             <text
-              x={item.labelPoint.x}
-              y={item.labelPoint.y}
+              x={item.labelX}
               textAnchor={item.anchor}
               fontSize={labelFontSize}
               fill="#1e293b"
               fontWeight={600}
               dominantBaseline="middle"
             >
-              {item.displayLabel}
+              {item.labelLines.map((line, lineIndex) => (
+                <tspan
+                  key={`${item.category.id}-line-${lineIndex}`}
+                  x={item.labelX}
+                  y={labelStartY + lineIndex * item.labelLineHeight}
+                >
+                  {line}
+                </tspan>
+              ))}
             </text>
             <text
               x={item.scoreLabelPoint.x}

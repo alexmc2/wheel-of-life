@@ -130,7 +130,11 @@ export default function Home() {
       if (typeof window === 'undefined') return;
       const width = window.innerWidth;
       const calculated =
-        width >= 1024 ? 360 : Math.max(220, Math.min(320, width - 64));
+        width >= 1024
+          ? 360
+          : width <= 640
+          ? Math.max(220, Math.min(300, width - 96))
+          : Math.max(240, Math.min(320, width - 80));
       setChartSize(calculated);
     };
 
@@ -425,13 +429,15 @@ export default function Home() {
             Wheel of Life
           </h1>
 
-          <p className="mx-auto max-w-4xl text-md text-slate-600 sm:text-lg">
-            Completing this exercise gives you a foundation on which to build
-            and grow. Take a moment to rate how satisfied you are in each area,
-            notice what feels out of balance, and capture the next steps you
-            would like to take. A PDF report will be available to download once
-            you complete the exercise.
-          </p>
+          {!isComplete && (
+            <p className="mx-auto max-w-4xl py-4 text-base text-slate-600 sm:text-lg">
+              Completing this exercise gives you a foundation on which to build
+              and grow. Take a moment to rate how satisfied you are in each area,
+              notice what feels out of balance, and capture the next steps you
+              would like to take. A PDF report will be available to download once
+              you complete the exercise.
+            </p>
+          )}
         </header>
 
         <section
@@ -553,12 +559,12 @@ export default function Home() {
                         <h2 className="text-lg font-semibold text-slate-800">
                           Wheel overview
                         </h2>
-                        <div className="mt-4 flex flex-col items-center gap-8 sm:gap-10">
-                          <div className="mx-auto w-full max-w-[460px] px-4 sm:px-0">
+                        <div className="mt-4 flex flex-col items-center gap-5 sm:gap-10">
+                          <div className="mx-auto w-full max-w-[460px] px-2 sm:px-0">
                             <WheelChart
                               categories={categories}
                               scores={scores}
-                              size={Math.min(420, chartSize + 60)}
+                              size={Math.min(420, chartSize + (chartSize < 320 ? 20 : 60))}
                               className="w-full"
                               svgRef={exportChartRef}
                             />
@@ -687,7 +693,7 @@ export default function Home() {
           </div>
 
           {!isComplete && (
-            <aside className="flex w-full flex-col gap-6 self-stretch lg:sticky lg:top-8">
+            <aside className="order-first flex w-full flex-col gap-6 self-stretch lg:order-none lg:sticky lg:top-8">
               <Card>
                 <CardHeader className="pb-0">
                   <CardTitle className="text-lg">Wheel preview</CardTitle>
