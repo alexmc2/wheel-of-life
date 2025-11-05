@@ -241,6 +241,14 @@ export default function Home() {
           } ${exportWidth} ${exportHeight}`
         );
 
+        svgClone
+          .querySelectorAll('tspan')
+          .forEach((node) => {
+            if (node.textContent === 'R/ships') {
+              node.textContent = 'Relationships';
+            }
+          });
+
         const serializer = new XMLSerializer();
         const svgString = serializer.serializeToString(svgClone);
         const svgBlob = new Blob([svgString], {
@@ -344,9 +352,10 @@ export default function Home() {
         ? pdf.splitTextToSize(trimmedNote, maxLineWidth)
         : [];
       const noteHeight = hasNote ? noteLines.length * noteLineHeight : 0;
+      const noteSpacing = hasNote ? labelSpacing : 0;
       const trailingSpacing = index < categories.length - 1 ? blockSpacing : 0;
       const entryHeight =
-        labelSpacing + scoreSpacing + noteHeight + trailingSpacing;
+        labelSpacing + scoreSpacing + noteSpacing + noteHeight + trailingSpacing;
 
       if (cursorY + entryHeight > pageHeight - margin) {
         pdf.addPage();
@@ -365,6 +374,7 @@ export default function Home() {
       cursorY += scoreSpacing;
 
       if (hasNote) {
+        cursorY += noteSpacing;
         pdf.setFont('helvetica', 'normal');
         pdf.setFontSize(bodyFontSize);
         pdf.text(noteLines, margin, cursorY);
@@ -567,9 +577,13 @@ export default function Home() {
                               size={Math.min(420, chartSize + (chartSize < 320 ? 20 : 60))}
                               className="w-full"
                               svgRef={exportChartRef}
+                              labelOverrides={{
+                                personal_growth: ['Personal', 'Growth'],
+                                relationships: ['R/ships'],
+                              }}
                             />
                           </div>
-                          <ul className="w-full max-w-[520px] space-y-3 text-md text-slate-600">
+                          <ul className="w-full max-w-[520px] space-y-3 text-md text-slate-600 lg:text-lg">
                             {categories.map((category) => {
                               const note = (
                                 reflections[category.id] ?? ''
@@ -581,7 +595,7 @@ export default function Home() {
                                 >
                                   <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
                                     <div className="sm:max-w-[70%]">
-                                      <p className="font-medium text-slate-700">
+                                    <p className="font-medium text-slate-700">
                                         {category.label}
                                       </p>
                                     </div>
@@ -590,7 +604,7 @@ export default function Home() {
                                     </span>
                                   </div>
                                   {note && (
-                                    <p className="mt-1 whitespace-pre-wrap text-sm text-slate-600">
+                                    <p className="mt-1 whitespace-pre-wrap text-sm text-slate-600 lg:text-base">
                                       {note}
                                     </p>
                                   )}

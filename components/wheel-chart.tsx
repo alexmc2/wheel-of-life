@@ -16,6 +16,7 @@ export interface WheelChartProps {
   size?: number;
   className?: string;
   svgRef?: React.Ref<SVGSVGElement>;
+  labelOverrides?: Partial<Record<string, string[]>>;
 }
 
 type TextAnchor = "inherit" | "middle" | "start" | "end";
@@ -70,7 +71,14 @@ function createRingPath(
   ].join(" ");
 }
 
-export function WheelChart({ categories, scores, size = 360, className, svgRef }: WheelChartProps) {
+export function WheelChart({
+  categories,
+  scores,
+  size = 360,
+  className,
+  svgRef,
+  labelOverrides,
+}: WheelChartProps) {
   const center = size / 2;
   const ringPadding = Math.max(36, size * 0.12);
   const outerRadius = center - ringPadding;
@@ -125,10 +133,14 @@ export function WheelChart({ categories, scores, size = 360, className, svgRef }
       const scorePoint = toCartesian(center, valueRadius, midAngle);
 
       const labelLines: string[] = (() => {
-        if (category.label === "Personal Growth") {
-          return ["Personal", "Growth"];
+        const overrideLines = labelOverrides?.[category.id];
+        if (overrideLines?.length) {
+          return overrideLines;
         }
-        if (category.label === "Relationships") {
+        if (category.label === "Personal Growth") {
+          return size <= 360 ? ["Personal", "Growth"] : [category.label];
+        }
+        if (category.label === "Relationships" && size <= 320) {
           return ["R/ships"];
         }
         return [category.label];
@@ -163,12 +175,14 @@ export function WheelChart({ categories, scores, size = 360, className, svgRef }
     categories,
     center,
     outerRadius,
+    size,
     valueMaxRadius,
     scores,
     labelDistance,
     labelOffset,
     scoreOffset,
     labelLineHeight,
+    labelOverrides,
   ]);
 
   const gridRadii = React.useMemo(
