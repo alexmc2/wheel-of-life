@@ -163,7 +163,6 @@ export function WheelChart({ categories, scores, size = 360, className, svgRef }
     categories,
     center,
     outerRadius,
-    size,
     valueMaxRadius,
     scores,
     labelDistance,
