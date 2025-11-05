@@ -465,7 +465,7 @@ export default function Home() {
     <div className="min-h-screen bg-[#f4f6fb] py-12 sm:py-16">
       <div className="mx-auto flex w-full max-w-7xl flex-col gap-10 px-4 sm:px-6 ">
         <header className="flex flex-col gap-3 text-center">
-          <h1 className="sm:text-4xl text-2xl font-semibold uppercase tracking-[0.2em] text-slate-500">
+          <h1 className="sm:text-4xl text-3xl font-semibold uppercase tracking-[0.2em] text-slate-500">
             Wheel of Life
           </h1>
 
@@ -738,7 +738,7 @@ export default function Home() {
             <aside className="order-first flex w-full flex-col gap-6 self-stretch lg:order-0 lg:sticky lg:top-8">
               <Card>
                 <CardHeader className="pb-0">
-                  <CardTitle className="text-md sm:text-lg">Wheel preview</CardTitle>
+                  <CardTitle className="text-lg sm:text-xl">Wheel preview</CardTitle>
                   <CardDescription>
                     See how your wheel is shaping up as you work through each
                     area.
