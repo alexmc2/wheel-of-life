@@ -182,6 +182,7 @@ export default function Home() {
     setReflections((prev) => ({ ...prev, [promptId]: value }));
   };
 
+
   const handleNext = () => {
     setStep((prev) => Math.min(prev + 1, categories.length));
   };
@@ -208,38 +209,65 @@ export default function Home() {
     });
     const pageWidth = pdf.internal.pageSize.getWidth();
     const pageHeight = pdf.internal.pageSize.getHeight();
-    const margin = 48;
+    const margin = 44;
     const contentWidth = pageWidth - margin * 2;
 
     const chartElement = exportChartRef.current;
-    const chartTarget = Math.min(380, Math.max(260, chartSize + 40));
-    let chartImage: string | null = null;
+    let chartImageData: { dataUrl: string; width: number; height: number } | null = null;
 
     if (chartElement) {
       try {
+        const bbox = chartElement.getBBox();
+        const exportPadding = Math.max(20, chartSize * 0.12);
+        const exportWidth = bbox.width + exportPadding * 2;
+        const exportHeight = bbox.height + exportPadding * 2;
+
+        const svgClone = chartElement.cloneNode(true) as SVGSVGElement;
+        svgClone.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
+        svgClone.setAttribute('xmlns:xlink', 'http://www.w3.org/1999/xlink');
+        svgClone.setAttribute('width', `${exportWidth}`);
+        svgClone.setAttribute('height', `${exportHeight}`);
+        svgClone.setAttribute(
+          'viewBox',
+          `${bbox.x - exportPadding} ${bbox.y - exportPadding} ${exportWidth} ${exportHeight}`
+        );
+
         const serializer = new XMLSerializer();
-        const svgString = serializer.serializeToString(chartElement);
+        const svgString = serializer.serializeToString(svgClone);
         const svgBlob = new Blob([svgString], {
           type: 'image/svg+xml;charset=utf-8',
         });
         const svgUrl = URL.createObjectURL(svgBlob);
-        chartImage = await new Promise<string>((resolve, reject) => {
+        chartImageData = await new Promise<{
+          dataUrl: string;
+          width: number;
+          height: number;
+        }>((resolve, reject) => {
           const img = new Image();
+          const scaleFactor = 2.8;
           img.crossOrigin = 'anonymous';
           img.onload = () => {
             const canvas = document.createElement('canvas');
-            canvas.width = chartTarget;
-            canvas.height = chartTarget;
+            canvas.width = Math.round(exportWidth * scaleFactor);
+            canvas.height = Math.round(exportHeight * scaleFactor);
             const context = canvas.getContext('2d');
             if (!context) {
               reject(new Error('Canvas context not available'));
               URL.revokeObjectURL(svgUrl);
               return;
             }
-            context.clearRect(0, 0, chartTarget, chartTarget);
-            context.drawImage(img, 0, 0, chartTarget, chartTarget);
+            context.scale(scaleFactor, scaleFactor);
+            context.fillStyle = '#ffffff';
+            context.fillRect(0, 0, exportWidth, exportHeight);
+            context.imageSmoothingEnabled = true;
+            context.imageSmoothingQuality = 'high';
+            context.drawImage(img, 0, 0, exportWidth, exportHeight);
             URL.revokeObjectURL(svgUrl);
-            resolve(canvas.toDataURL('image/png'));
+            resolve({
+              dataUrl: canvas.toDataURL('image/png'),
+              width: exportWidth,
+              height: exportHeight,
+            });
           };
           img.onerror = () => {
             URL.revokeObjectURL(svgUrl);
@@ -264,47 +292,92 @@ export default function Home() {
       margin + 34
     );
 
-    let cursorY = margin + 50;
+    let cursorY = margin + 78;
 
-    if (chartImage) {
-      const chartWidth = Math.min(chartTarget, contentWidth * 0.55);
-      const chartHeight = chartWidth;
-      pdf.addImage(chartImage, 'PNG', margin, cursorY, chartWidth, chartHeight);
+    if (chartImageData) {
+      const desiredWidth = Math.min(contentWidth, 620);
+      const scale = desiredWidth / chartImageData.width;
+      const chartWidth = chartImageData.width * scale;
+      const chartHeight = chartImageData.height * scale;
+      const chartX = margin + (contentWidth - chartWidth) / 2;
+      pdf.addImage(chartImageData.dataUrl, 'PNG', chartX, cursorY, chartWidth, chartHeight);
 
-      const tableX = margin + chartWidth + 24;
+      cursorY += chartHeight + 40;
+    }
+
+    const maxLineWidth = contentWidth;
+    const addScoresNotesHeading = (title: string) => {
       pdf.setFont('helvetica', 'bold');
-      pdf.setFontSize(13);
-      pdf.text('Scores', tableX, cursorY + 4);
+      pdf.setFontSize(14);
+      pdf.text(title, margin, cursorY);
+      cursorY += 26;
+    };
+
+    addScoresNotesHeading('Scores & notes');
+
+    const labelSpacing = 16;
+    const scoreSpacing = 14;
+    const noteLineHeight = 16;
+    const blockSpacing = 20;
+    const bodyFontSize = 11.5;
+
+    categories.forEach((category, index) => {
+      const scoreValue = scores[category.id] ?? 0;
+      const rawNote = reflections[category.id] ?? '';
+      const trimmedNote = rawNote.trim();
+      const hasNote = trimmedNote.length > 0;
+      const noteLines = hasNote
+        ? pdf.splitTextToSize(trimmedNote, maxLineWidth)
+        : ['No notes recorded.'];
+      const noteHeight = noteLines.length * noteLineHeight;
+      const trailingSpacing = index < categories.length - 1 ? blockSpacing : 0;
+      const entryHeight = labelSpacing + scoreSpacing + noteHeight + trailingSpacing;
+
+      if (cursorY + entryHeight > pageHeight - margin) {
+        pdf.addPage();
+        cursorY = margin;
+        addScoresNotesHeading('Scores & notes (cont.)');
+      }
+
+      pdf.setFont('helvetica', 'bold');
+      pdf.setFontSize(12);
+      pdf.text(`${category.label}`, margin, cursorY);
+      cursorY += labelSpacing;
 
       pdf.setFont('helvetica', 'normal');
-      pdf.setFontSize(11);
-      let tableY = cursorY + 24;
-      categories.forEach((category) => {
-        const scoreValue = scores[category.id] ?? 0;
-        pdf.text(category.label, tableX, tableY);
-        const scoreText = `${scoreValue}/10`;
-        pdf.text(scoreText, tableX + 120, tableY, { align: 'right' });
-        tableY += 18;
-      });
+      pdf.setFontSize(bodyFontSize);
+      pdf.text(`Score: ${scoreValue}/10`, margin, cursorY);
+      cursorY += scoreSpacing;
 
-      cursorY += chartHeight + 28;
-    }
+      pdf.setFont('helvetica', 'normal');
+      pdf.setFontSize(bodyFontSize);
+      pdf.text(noteLines, margin, cursorY);
+      cursorY += noteHeight;
+
+      cursorY += trailingSpacing;
+    });
+
+    cursorY += 32;
 
     pdf.setFont('helvetica', 'bold');
     pdf.setFontSize(14);
-    pdf.text('Reflection notes', margin, cursorY);
-    cursorY += 20;
+    pdf.text('Reflection prompts', margin, cursorY);
+    cursorY += 22;
 
     pdf.setFont('helvetica', 'normal');
-    pdf.setFontSize(11);
-    const maxLineWidth = contentWidth;
+    pdf.setFontSize(bodyFontSize);
+
+    const promptLineHeight = 16;
+    const promptGap = 16;
 
     reflectivePrompts.forEach((prompt) => {
       const answer = reflections[prompt.id]?.trim() || '(No notes yet)';
       const questionLines = pdf.splitTextToSize(prompt.question, maxLineWidth);
       const answerLines = pdf.splitTextToSize(answer, maxLineWidth);
       const estimatedHeight =
-        questionLines.length * 14 + answerLines.length * 14 + 12;
+        questionLines.length * promptLineHeight +
+        answerLines.length * promptLineHeight +
+        promptGap;
 
       if (cursorY + estimatedHeight > pageHeight - margin) {
         pdf.addPage();
@@ -312,12 +385,14 @@ export default function Home() {
       }
 
       pdf.setFont('helvetica', 'bold');
+      pdf.setFontSize(bodyFontSize);
       pdf.text(questionLines, margin, cursorY);
-      cursorY += questionLines.length * 14;
+      cursorY += questionLines.length * promptLineHeight;
 
       pdf.setFont('helvetica', 'normal');
+      pdf.setFontSize(bodyFontSize);
       pdf.text(answerLines, margin, cursorY);
-      cursorY += answerLines.length * 14 + 12;
+      cursorY += answerLines.length * promptLineHeight + promptGap;
     });
 
     pdf.save('wheel-of-life.pdf');
@@ -331,9 +406,9 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-[#f4f6fb] py-12 sm:py-16">
-      <div className="mx-auto flex w-full max-w-6xl flex-col gap-10 px-4 sm:px-6 lg:px-10">
+      <div className="mx-auto flex w-full max-w-7xl flex-col gap-10 px-4 sm:px-6 ">
         <header className="flex flex-col gap-3 text-center">
-          <h1 className="text-2xl font-semibold uppercase tracking-[0.2em] text-slate-500">
+          <h1 className="text-4xl font-semibold uppercase tracking-[0.2em] text-slate-500">
             Wheel of Life
           </h1>
 
@@ -348,7 +423,7 @@ export default function Home() {
         <section
           className={cn(
             'flex flex-col gap-8',
-            !isComplete && 'lg:grid lg:grid-cols-[1.05fr_0.95fr] lg:items-start'
+            !isComplete && 'lg:grid lg:grid-cols-[1.00fr_1fr] lg:items-start'
           )}
         >
           <div className="space-y-6">
@@ -364,11 +439,11 @@ export default function Home() {
                     ? 'Review your Wheel of Life'
                     : activeCategory.label}
                 </CardTitle>
-                <CardDescription className="text-slate-600">
-                  {isComplete
-                    ? 'Identify the shifts you are ready to make and prepare to revisit this wheel in a few weeks to notice your progress.'
-                    : activeCategory.description}
-                </CardDescription>
+                {!isComplete && (
+                  <CardDescription className="text-slate-600">
+                    {activeCategory.description}
+                  </CardDescription>
+                )}
               </CardHeader>
               <CardContent className="mt-6 space-y-6">
                 {!isComplete && (
@@ -450,30 +525,42 @@ export default function Home() {
                         <h2 className="text-lg font-semibold text-slate-800">
                           Wheel overview
                         </h2>
-                        <div className="mt-4 flex flex-col items-center gap-8 sm:flex-row sm:items-start sm:justify-between">
-                          <div className="w-full max-w-[400px] pl-4 sm:pl-8 lg:pl-12">
+                        <div className="mt-4 flex flex-col items-center gap-8 sm:gap-10">
+                          <div className="mx-auto w-full max-w-[460px] px-4 sm:px-0">
                             <WheelChart
                               categories={categories}
                               scores={scores}
-                              size={Math.min(360, chartSize + 10)}
+                              size={Math.min(420, chartSize + 60)}
                               className="w-full"
                               svgRef={exportChartRef}
                             />
                           </div>
-                          <ul className="w-full max-w-[320px] space-y-2 text-md text-slate-600 sm:pr-3 lg:pr-4">
-                            {categories.map((category) => (
-                              <li
-                                key={category.id}
-                                className="flex items-center justify-between rounded-lg bg-white px-3 py-2 shadow-sm"
-                              >
-                                <span className="font-medium text-slate-700">
-                                  {category.label}
-                                </span>
-                                <span className="text-slate-900">
-                                  {scores[category.id] ?? 0}/10
-                                </span>
-                              </li>
-                            ))}
+                          <ul className="w-full max-w-[520px] space-y-3 text-md text-slate-600">
+                            {categories.map((category) => {
+                              const note = (reflections[category.id] ?? '').trim();
+                              return (
+                                <li
+                                  key={category.id}
+                                  className="rounded-lg bg-white px-4 py-3 shadow-sm"
+                                >
+                                  <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                                    <div className="sm:max-w-[70%]">
+                                      <p className="font-medium text-slate-700">
+                                        {category.label}
+                                      </p>
+                                    </div>
+                                    <span className="text-slate-900 sm:pl-4">
+                                      {scores[category.id] ?? 0}/10
+                                    </span>
+                                  </div>
+                                  {note && (
+                                    <p className="mt-1 whitespace-pre-wrap text-sm text-slate-600">
+                                      {note}
+                                    </p>
+                                  )}
+                                </li>
+                              );
+                            })}
                           </ul>
                         </div>
                       </div>

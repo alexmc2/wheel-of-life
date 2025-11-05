@@ -77,6 +77,16 @@ export function WheelChart({ categories, scores, size = 360, className, svgRef }
   const ringThickness = Math.max(24, outerRadius * 0.24);
   const valueMaxRadius = outerRadius - ringThickness;
   const gridLevels = 5;
+  const isCompact = size <= 280;
+  const labelFontSize = Math.round(
+    isCompact ? Math.max(11, size * 0.05) : Math.max(13, size * 0.048),
+  );
+  const scoreFontSize = Math.round(
+    isCompact ? Math.max(10, size * 0.044) : Math.max(12, size * 0.042),
+  );
+  const labelOffset = isCompact ? Math.max(10, size * 0.034) : Math.max(14, size * 0.038);
+  const scoreOffset = isCompact ? Math.max(12, size * 0.04) : Math.max(18, size * 0.044);
+  const labelDistance = isCompact ? Math.max(18, size * 0.065) : Math.max(26, size * 0.07);
 
   const processed = React.useMemo(() => {
     if (categories.length === 0) return [];
@@ -94,15 +104,14 @@ export function WheelChart({ categories, scores, size = 360, className, svgRef }
         ? ""
         : `M ${center} ${center} ${createSectorPath(center, valueRadius, startAngle, endAngle)}`;
 
-      const labelDistance = Math.max(14, size * 0.04);
       const textBase = toCartesian(center, outerRadius + labelDistance, midAngle);
       const labelPoint = {
         x: textBase.x,
-        y: textBase.y - 10,
+        y: textBase.y - labelOffset,
       };
       const scoreLabelPoint = {
         x: textBase.x,
-        y: textBase.y + 12,
+        y: textBase.y + scoreOffset,
       };
 
       const horizontalAlignment = Math.cos(midAngle);
@@ -113,6 +122,15 @@ export function WheelChart({ categories, scores, size = 360, className, svgRef }
         : "end";
 
       const scorePoint = toCartesian(center, valueRadius, midAngle);
+
+      let displayLabel = category.label;
+      if (size <= 260) {
+        if (category.label === "Personal Growth") {
+          displayLabel = "Growth";
+        } else if (category.label === "Relationships") {
+          displayLabel = "R/ships";
+        }
+      }
 
       return {
         category,
@@ -126,9 +144,20 @@ export function WheelChart({ categories, scores, size = 360, className, svgRef }
         scorePoint,
         scoreLabelPoint,
         normalized,
+        displayLabel,
       };
     });
-  }, [categories, center, outerRadius, size, valueMaxRadius, scores]);
+  }, [
+    categories,
+    center,
+    outerRadius,
+    size,
+    valueMaxRadius,
+    scores,
+    labelDistance,
+    labelOffset,
+    scoreOffset,
+  ]);
 
   const gridRadii = React.useMemo(
     () =>
@@ -213,18 +242,18 @@ export function WheelChart({ categories, scores, size = 360, className, svgRef }
               x={item.labelPoint.x}
               y={item.labelPoint.y}
               textAnchor={item.anchor}
-              fontSize={12}
+              fontSize={labelFontSize}
               fill="#1e293b"
               fontWeight={600}
               dominantBaseline="middle"
             >
-              {item.category.label}
+              {item.displayLabel}
             </text>
             <text
               x={item.scoreLabelPoint.x}
               y={item.scoreLabelPoint.y}
               textAnchor={item.anchor}
-              fontSize={11}
+              fontSize={scoreFontSize}
               fill="#475569"
               dominantBaseline="middle"
             >
