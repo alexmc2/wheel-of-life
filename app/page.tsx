@@ -440,7 +440,7 @@ export default function Home() {
           </h1>
 
           {!isComplete && (
-            <p className="mx-auto max-w-4xl py-4 text-base text-slate-600 sm:text-lg">
+            <p className="mx-auto max-w-4xl py-4 text-md text-slate-600 sm:text-lg">
               Completing this exercise gives you a foundation on which to build
               and grow. Take a moment to rate how satisfied you are in each area,
               notice what feels out of balance, and capture the next steps you
@@ -583,7 +583,7 @@ export default function Home() {
                               }}
                             />
                           </div>
-                          <ul className="w-full max-w-[520px] space-y-3 text-md text-slate-600 lg:text-lg">
+                          <ul className="w-full max-w-[520px] space-y-3 text-lg text-slate-600">
                             {categories.map((category) => {
                               const note = (
                                 reflections[category.id] ?? ''
@@ -595,16 +595,16 @@ export default function Home() {
                                 >
                                   <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
                                     <div className="sm:max-w-[70%]">
-                                    <p className="font-medium text-slate-700">
+                                    <p className="text-lg font-semibold text-slate-700">
                                         {category.label}
                                       </p>
                                     </div>
-                                    <span className="text-slate-900 sm:pl-4">
+                                    <span className="text-lg font-semibold text-slate-900 sm:pl-4">
                                       {scores[category.id] ?? 0}/10
                                     </span>
                                   </div>
                                   {note && (
-                                    <p className="mt-1 whitespace-pre-wrap text-sm text-slate-600 lg:text-base">
+                                    <p className="mt-1 whitespace-pre-wrap text-lg text-slate-600 leading-relaxed">
                                       {note}
                                     </p>
                                   )}
@@ -618,7 +618,7 @@ export default function Home() {
                         <h2 className="text-lg font-semibold text-slate-800">
                           Reflection prompts
                         </h2>
-                        <div className="mt-3 space-y-4 text-md text-slate-600 ">
+                        <div className="mt-3 space-y-4 text-lg text-slate-600 ">
                           {reflectivePrompts.map((prompt) => (
                             <div key={prompt.id}>
                               <p className="font-bold text-slate-700 ">
