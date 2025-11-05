@@ -626,7 +626,7 @@ export default function Home() {
                                 >
                                   <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
                                     <div className="sm:max-w-[70%]">
-                                    <p className="sm:text-lg text-md  text-slate-700">
+                                    <p className="sm:text-lg text-md font-bold  text-slate-700">
                                         {category.label}
                                       </p>
                                     </div>
