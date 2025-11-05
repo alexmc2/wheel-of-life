@@ -33,12 +33,12 @@ export function CardDescription({
   className,
   ...props
 }: React.HTMLAttributes<HTMLParagraphElement>) {
-  return <p className={cn("text-base text-slate-600", className)} {...props} />;
+  return <p className={cn("text-md sm:text-lg text-slate-600", className)} {...props} />;
 }
 
 export function CardContent({
   className,
   ...props
 }: React.HTMLAttributes<HTMLDivElement>) {
-  return <div className={cn("px-6 pb-6", className)} {...props} />;
+  return <div className={cn("px-6 pb-6 text-md sm:text-lg", className)} {...props} />;
 }

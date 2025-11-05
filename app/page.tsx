@@ -214,6 +214,8 @@ export default function Home() {
     const pageHeight = pdf.internal.pageSize.getHeight();
     const margin = 44;
     const contentWidth = pageWidth - margin * 2;
+    const textRightPadding = 48;
+    const chartHorizontalPadding = 60;
 
     const chartElement = exportChartRef.current;
     let chartImageData: {
@@ -225,9 +227,19 @@ export default function Home() {
     if (chartElement) {
       try {
         const bbox = chartElement.getBBox();
-        const exportPadding = Math.max(20, chartSize * 0.12);
-        const exportWidth = bbox.width + exportPadding * 2;
-        const exportHeight = bbox.height + exportPadding * 2;
+        const basePadding = Math.max(28, chartSize * 0.14);
+        const horizontalPadding = {
+          left: basePadding,
+          right: basePadding * 1.75,
+        };
+        const verticalPadding = {
+          top: basePadding,
+          bottom: basePadding,
+        };
+        const exportWidth =
+          bbox.width + horizontalPadding.left + horizontalPadding.right;
+        const exportHeight =
+          bbox.height + verticalPadding.top + verticalPadding.bottom;
 
         const svgClone = chartElement.cloneNode(true) as SVGSVGElement;
         svgClone.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
@@ -236,8 +248,8 @@ export default function Home() {
         svgClone.setAttribute('height', `${exportHeight}`);
         svgClone.setAttribute(
           'viewBox',
-          `${bbox.x - exportPadding} ${
-            bbox.y - exportPadding
+          `${bbox.x - horizontalPadding.left} ${
+            bbox.y - verticalPadding.top
           } ${exportWidth} ${exportHeight}`
         );
 
@@ -247,6 +259,21 @@ export default function Home() {
             if (node.textContent === 'R/ships') {
               node.textContent = 'Relationships';
             }
+          });
+
+        svgClone
+          .querySelectorAll<SVGTextElement>('text[font-weight="600"]')
+          .forEach((node) => {
+            const fontSizeAttr = node.getAttribute('font-size');
+            const baseFontSize = fontSizeAttr
+              ? Number.parseFloat(fontSizeAttr)
+              : Number.NaN;
+            const resolvedSize = Number.isNaN(baseFontSize) ? 14 : baseFontSize;
+            const reduced = Math.max(
+              10,
+              Number.parseFloat((resolvedSize * 0.9).toFixed(2)),
+            );
+            node.setAttribute('font-size', String(reduced));
           });
 
         const serializer = new XMLSerializer();
@@ -310,7 +337,10 @@ export default function Home() {
     let cursorY = margin + 78;
 
     if (chartImageData) {
-      const desiredWidth = Math.min(contentWidth, 620);
+      const desiredWidth = Math.min(
+        Math.max(contentWidth - chartHorizontalPadding, 240),
+        560,
+      );
       const scale = desiredWidth / chartImageData.width;
       const chartWidth = chartImageData.width * scale;
       const chartHeight = chartImageData.height * scale;
@@ -327,7 +357,7 @@ export default function Home() {
       cursorY += chartHeight + 40;
     }
 
-    const maxLineWidth = contentWidth;
+    const maxLineWidth = Math.max(contentWidth - textRightPadding, 280);
     const addScoresNotesHeading = (title: string) => {
       pdf.setFont('helvetica', 'bold');
       pdf.setFontSize(14);
@@ -337,10 +367,10 @@ export default function Home() {
 
     addScoresNotesHeading('Scores & notes');
 
-    const labelSpacing = 16;
-    const scoreSpacing = 14;
-    const noteLineHeight = 16;
-    const blockSpacing = 20;
+    const labelSpacing = 12;
+    const scoreSpacing = 12;
+    const noteLineHeight = 15;
+    const blockSpacing = 18;
     const bodyFontSize = 11.5;
 
     categories.forEach((category, index) => {
@@ -461,7 +491,7 @@ export default function Home() {
               <CardHeader className="relative pb-0 lg:pr-48">
                 <CardDescription className="text-xs font-medium uppercase text-slate-500">
                   {isComplete
-                    ? 'Review'
+                    ? ''
                     : 'Step ' + (step + 1) + ' of ' + categories.length}
                 </CardDescription>
                 <CardTitle className="text-2xl">
@@ -566,7 +596,7 @@ export default function Home() {
                     </div>
                     <div className="space-y-4">
                       <div className="rounded-xl border border-slate-200 p-4">
-                        <h2 className="text-lg font-semibold text-slate-800">
+                        <h2 className="text-lg sm:text-xl font-semibold text-slate-800">
                           Wheel overview
                         </h2>
                         <div className="mt-4 flex flex-col items-center gap-5 sm:gap-10">
@@ -583,7 +613,7 @@ export default function Home() {
                               }}
                             />
                           </div>
-                          <ul className="w-full max-w-[520px] space-y-3 text-lg text-slate-600">
+                          <ul className="w-full max-w-[520px] space-y-3 text-md sm:text-lg text-slate-600">
                             {categories.map((category) => {
                               const note = (
                                 reflections[category.id] ?? ''
@@ -595,16 +625,16 @@ export default function Home() {
                                 >
                                   <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
                                     <div className="sm:max-w-[70%]">
-                                    <p className="text-lg font-semibold text-slate-700">
+                                    <p className="sm:text-lg text-md  text-slate-700">
                                         {category.label}
                                       </p>
                                     </div>
-                                    <span className="text-lg font-semibold text-slate-900 sm:pl-4">
+                                    <span className="sm:text-lg text-md  text-slate-900 sm:pl-4">
                                       {scores[category.id] ?? 0}/10
                                     </span>
                                   </div>
                                   {note && (
-                                    <p className="mt-1 whitespace-pre-wrap text-lg text-slate-600 leading-relaxed">
+                                    <p className="mt-1 whitespace-pre-wrap text-md sm:text-lg text-slate-600 leading-relaxed">
                                       {note}
                                     </p>
                                   )}
@@ -615,10 +645,10 @@ export default function Home() {
                         </div>
                       </div>
                       <div className="rounded-xl border border-slate-200 p-4">
-                        <h2 className="text-lg font-semibold text-slate-800">
+                        <div className="text-lg sm:text-xl font-semibold text-slate-800">
                           Reflection prompts
-                        </h2>
-                        <div className="mt-3 space-y-4 text-lg text-slate-600 ">
+                        </div>
+                        <div className="mt-3 space-y-4 text-md sm:text-lg text-slate-600 ">
                           {reflectivePrompts.map((prompt) => (
                             <div key={prompt.id}>
                               <p className="font-bold text-slate-700 ">
@@ -686,7 +716,7 @@ export default function Home() {
                 <CardContent className="space-y-6">
                   {reflectivePrompts.map((prompt) => (
                     <div key={prompt.id}>
-                      <p className="text-md font-semibold text-slate-700">
+                      <p className="text-md sm:text-lg font-semibold text-slate-700">
                         {prompt.question}
                       </p>
                       <Textarea
@@ -708,7 +738,7 @@ export default function Home() {
             <aside className="order-first flex w-full flex-col gap-6 self-stretch lg:order-0 lg:sticky lg:top-8">
               <Card>
                 <CardHeader className="pb-0">
-                  <CardTitle className="text-lg">Wheel preview</CardTitle>
+                  <CardTitle className="text-md sm:text-lg">Wheel preview</CardTitle>
                   <CardDescription>
                     See how your wheel is shaping up as you work through each
                     area.
