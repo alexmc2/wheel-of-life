@@ -126,9 +126,9 @@ export function WheelChart({ categories, scores, size = 360, className, svgRef }
 
       const labelLines: string[] = (() => {
         if (category.label === "Personal Growth") {
-          return size <= 360 ? ["Personal", "Growth"] : [category.label];
+          return ["Personal", "Growth"];
         }
-        if (category.label === "Relationships" && size <= 320) {
+        if (category.label === "Relationships") {
           return ["R/ships"];
         }
         return [category.label];

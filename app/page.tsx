@@ -604,10 +604,10 @@ export default function Home() {
                         <h2 className="text-lg font-semibold text-slate-800">
                           Reflection prompts
                         </h2>
-                        <div className="mt-3 space-y-4 text-md text-slate-600">
+                        <div className="mt-3 space-y-4 text-md text-slate-600 ">
                           {reflectivePrompts.map((prompt) => (
                             <div key={prompt.id}>
-                              <p className="font-medium text-slate-700">
+                              <p className="font-bold text-slate-700 ">
                                 {prompt.question}
                               </p>
                               <p className="mt-1 whitespace-pre-wrap text-slate-700">
@@ -628,10 +628,10 @@ export default function Home() {
             {!isComplete && (
               <Card>
                 <CardHeader>
-                  <CardTitle className="text-lg">Why this rating?</CardTitle>
+                  <CardTitle className="text-lg">Why this rating? </CardTitle>
                   <CardDescription className="pb-2">
                     Capture any thoughts you want to revisit with your coach
-                    later.
+                    later. (Optional)
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
@@ -639,10 +639,8 @@ export default function Home() {
                     htmlFor={`notes-${activeCategory.id}`}
                     className="mb-2 flex items-baseline justify-between text-sm font-medium text-slate-700"
                   >
-                    <span>Notes</span>
-                    <span className="font-normal text-slate-500">
-                      (optional)
-                    </span>
+                  
+            
                   </label>
                   <Textarea
                     id={`notes-${activeCategory.id}`}
@@ -693,7 +691,7 @@ export default function Home() {
           </div>
 
           {!isComplete && (
-            <aside className="order-first flex w-full flex-col gap-6 self-stretch lg:order-none lg:sticky lg:top-8">
+            <aside className="order-first flex w-full flex-col gap-6 self-stretch lg:order-0 lg:sticky lg:top-8">
               <Card>
                 <CardHeader className="pb-0">
                   <CardTitle className="text-lg">Wheel preview</CardTitle>
