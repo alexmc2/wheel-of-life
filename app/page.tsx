@@ -1,6 +1,7 @@
 'use client';
 
 import * as React from 'react';
+import { Alfa_Slab_One } from 'next/font/google';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -12,6 +13,43 @@ import {
 import { Textarea } from '@/components/ui/textarea';
 import { WheelChart, WheelCategory } from '@/components/wheel-chart';
 import { cn } from '@/lib/utils';
+
+const stayNimbleFont = Alfa_Slab_One({
+  weight: '400',
+  subsets: ['latin'],
+});
+
+const STAY_NIMBLE_URL = 'https://staynimble.co.uk/for-individuals/';
+const STAY_NIMBLE_PDF_FONT_FILE = 'AlfaSlabOne-Regular.ttf';
+const STAY_NIMBLE_PDF_FONT_NAME = 'StayNimble';
+
+const arrayBufferToBase64 = (buffer: ArrayBuffer) => {
+  let binary = '';
+  const bytes = new Uint8Array(buffer);
+  const chunkSize = 0x8000;
+  for (let i = 0; i < bytes.length; i += chunkSize) {
+    const chunk = bytes.subarray(i, i + chunkSize);
+    binary += String.fromCharCode(...chunk);
+  }
+  if (typeof window === 'undefined') {
+    throw new Error('Base64 encoding requires a browser environment');
+  }
+  return window.btoa(binary);
+};
+
+let stayNimbleFontBase64: string | null = null;
+const loadStayNimbleFontData = async () => {
+  if (stayNimbleFontBase64) {
+    return stayNimbleFontBase64;
+  }
+  const response = await fetch(`/fonts/${STAY_NIMBLE_PDF_FONT_FILE}`);
+  if (!response.ok) {
+    throw new Error('Unable to fetch Stay Nimble font');
+  }
+  const buffer = await response.arrayBuffer();
+  stayNimbleFontBase64 = arrayBufferToBase64(buffer);
+  return stayNimbleFontBase64;
+};
 
 const categories: WheelCategory[] = [
   {
@@ -223,6 +261,20 @@ export default function Home() {
       width: number;
       height: number;
     } | null = null;
+    let stayNimblePdfFontLoaded = false;
+
+    try {
+      const fontData = await loadStayNimbleFontData();
+      pdf.addFileToVFS(STAY_NIMBLE_PDF_FONT_FILE, fontData);
+      pdf.addFont(
+        STAY_NIMBLE_PDF_FONT_FILE,
+        STAY_NIMBLE_PDF_FONT_NAME,
+        'normal'
+      );
+      stayNimblePdfFontLoaded = true;
+    } catch (error) {
+      console.warn('Unable to load Stay Nimble font for PDF', error);
+    }
 
     if (chartElement) {
       try {
@@ -253,13 +305,11 @@ export default function Home() {
           } ${exportWidth} ${exportHeight}`
         );
 
-        svgClone
-          .querySelectorAll('tspan')
-          .forEach((node) => {
-            if (node.textContent === 'R/ships') {
-              node.textContent = 'Relationships';
-            }
-          });
+        svgClone.querySelectorAll('tspan').forEach((node) => {
+          if (node.textContent === 'R/ships') {
+            node.textContent = 'Relationships';
+          }
+        });
 
         svgClone
           .querySelectorAll<SVGTextElement>('text[font-weight="600"]')
@@ -271,7 +321,7 @@ export default function Home() {
             const resolvedSize = Number.isNaN(baseFontSize) ? 14 : baseFontSize;
             const reduced = Math.max(
               10,
-              Number.parseFloat((resolvedSize * 0.9).toFixed(2)),
+              Number.parseFloat((resolvedSize * 0.9).toFixed(2))
             );
             node.setAttribute('font-size', String(reduced));
           });
@@ -326,7 +376,22 @@ export default function Home() {
 
     pdf.setFont('helvetica', 'bold');
     pdf.setFontSize(22);
-    pdf.text('Wheel of Life Review', margin, margin + 16);
+    const headerBaseline = margin + 16;
+    pdf.text('Wheel of Life Review', margin, headerBaseline);
+
+    const stayNimbleLabel = 'Stay Nimble';
+    const stayNimbleFontSize = 14;
+    pdf.setFont(
+      stayNimblePdfFontLoaded ? STAY_NIMBLE_PDF_FONT_NAME : 'helvetica',
+      'normal'
+    );
+    pdf.setFontSize(stayNimbleFontSize);
+    pdf.setTextColor(240, 125, 185);
+    const stayNimbleX = pageWidth - margin - pdf.getTextWidth(stayNimbleLabel);
+    pdf.textWithLink(stayNimbleLabel, stayNimbleX, headerBaseline, {
+      url: STAY_NIMBLE_URL,
+    });
+    pdf.setTextColor(0, 0, 0);
 
     pdf.setFont('helvetica', 'normal');
     pdf.setFontSize(11);
@@ -339,7 +404,7 @@ export default function Home() {
     if (chartImageData) {
       const desiredWidth = Math.min(
         Math.max(contentWidth - chartHorizontalPadding, 240),
-        560,
+        560
       );
       const scale = desiredWidth / chartImageData.width;
       const chartWidth = chartImageData.width * scale;
@@ -386,7 +451,11 @@ export default function Home() {
       const noteSpacing = hasNote ? noteGap : 0;
       const trailingSpacing = index < categories.length - 1 ? blockSpacing : 0;
       const entryHeight =
-        labelSpacing + scoreSpacing + noteSpacing + noteHeight + trailingSpacing;
+        labelSpacing +
+        scoreSpacing +
+        noteSpacing +
+        noteHeight +
+        trailingSpacing;
 
       if (cursorY + entryHeight > pageHeight - margin) {
         pdf.addPage();
@@ -469,15 +538,25 @@ export default function Home() {
           <h1 className="sm:text-4xl text-3xl font-semibold uppercase tracking-[0.2em] text-slate-500">
             Wheel of Life
           </h1>
-
           {!isComplete && (
-            <p className="mx-auto max-w-4xl py-4 text-md text-slate-600 sm:text-lg">
-              Completing this exercise gives you a foundation on which to build
-              and grow. Take a moment to rate how satisfied you are in each area,
-              notice what feels out of balance, and capture the next steps you
-              would like to take. A PDF report will be available to download once
-              you complete the exercise.
-            </p>
+            <>
+              <p className="mx-auto max-w-2xl text-xl text-slate-500">
+                Adapted from resources by{' '}
+                <a
+                  className="font-medium text-[#f07db9] hover:text-[#f07db9]/80 "
+                  href={STAY_NIMBLE_URL}
+                >
+                  <span className={stayNimbleFont.className}>Stay Nimble</span>
+                </a>
+              </p>
+              <p className="mx-auto max-w-4xl pt-4 text-lg text-slate-600 sm:text-lg">
+                Completing this exercise gives you a foundation on which to
+                build and grow. Take a moment to rate how satisfied you are in
+                each area, notice what feels out of balance, and capture the
+                next steps you would like to take. A PDF report will be
+                available to download once you complete the exercise.
+              </p>
+            </>
           )}
         </header>
 
@@ -589,6 +668,17 @@ export default function Home() {
                       wheel evolves. Share your reflections with your coach to
                       keep your momentum.
                     </div>
+                    <div className="mx-auto flex flex-col items-center gap-1 text-center text-xl text-slate-500 sm:flex-row sm:justify-center sm:gap-2 sm:text-left">
+                      <span>Not working with a coach yet? Try</span>
+                      <a
+                        className="font-medium text-[#f07db9] hover:text-[#f07db9]/80"
+                        href={STAY_NIMBLE_URL}
+                      >
+                        <span className={`${stayNimbleFont.className} whitespace-nowrap`}>
+                          Stay Nimble
+                        </span>
+                      </a>
+                    </div>
                     <div className="flex flex-wrap items-center gap-3 lg:hidden">
                       <Button onClick={handleDownloadPdf}>Download PDF</Button>
                       <Button variant="outline" onClick={handleReset}>
@@ -605,7 +695,10 @@ export default function Home() {
                             <WheelChart
                               categories={categories}
                               scores={scores}
-                              size={Math.min(420, chartSize + (chartSize < 320 ? 20 : 60))}
+                              size={Math.min(
+                                420,
+                                chartSize + (chartSize < 320 ? 20 : 60)
+                              )}
                               className="w-full"
                               svgRef={exportChartRef}
                               labelOverrides={{
@@ -626,7 +719,7 @@ export default function Home() {
                                 >
                                   <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
                                     <div className="sm:max-w-[70%]">
-                                    <p className="sm:text-lg text-md font-bold  text-slate-700">
+                                      <p className="sm:text-lg text-md font-bold  text-slate-700">
                                         {category.label}
                                       </p>
                                     </div>
@@ -683,10 +776,7 @@ export default function Home() {
                   <label
                     htmlFor={`notes-${activeCategory.id}`}
                     className="mb-2 flex items-baseline justify-between text-sm font-medium text-slate-700"
-                  >
-                  
-            
-                  </label>
+                  ></label>
                   <Textarea
                     id={`notes-${activeCategory.id}`}
                     rows={4}
@@ -739,7 +829,9 @@ export default function Home() {
             <aside className="order-first flex w-full flex-col gap-6 self-stretch lg:order-0 lg:sticky lg:top-8">
               <Card>
                 <CardHeader className="pb-0">
-                  <CardTitle className="text-lg sm:text-xl">Wheel preview</CardTitle>
+                  <CardTitle className="text-lg sm:text-xl">
+                    Wheel preview
+                  </CardTitle>
                   <CardDescription>
                     See how your wheel is shaping up as you work through each
                     area.
