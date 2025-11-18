@@ -533,14 +533,14 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-[#f4f6fb] py-12 sm:py-16">
-      <div className="mx-auto flex w-full max-w-7xl flex-col gap-10 px-4 sm:px-6 ">
+      <div className="mx-auto flex w-full max-w-7xl flex-col gap-10 px-2 sm:px-6 ">
         <header className="flex flex-col gap-3 text-center">
           <h1 className="sm:text-4xl text-3xl font-semibold uppercase tracking-[0.2em] text-slate-500">
             Wheel of Life
           </h1>
           {!isComplete && (
             <>
-              <p className="mx-auto max-w-2xl text-xl text-slate-500">
+              <div className="mx-auto max-w-2xl sm:text-xl text-lg  text-slate-500">
                 Adapted from resources by{' '}
                 <a
                   className="font-medium text-[#f07db9] hover:text-[#f07db9]/80 "
@@ -548,8 +548,8 @@ export default function Home() {
                 >
                   <span className={stayNimbleFont.className}>Stay Nimble</span>
                 </a>
-              </p>
-              <p className="mx-auto max-w-4xl pt-4 text-lg text-slate-600 sm:text-lg">
+              </div>
+              <p className="mx-auto max-w-3xl pt-4 text-lg text-slate-600 sm:text-lg ">
                 Completing this exercise gives you a foundation on which to
                 build and grow. Take a moment to rate how satisfied you are in
                 each area, notice what feels out of balance, and capture the
@@ -715,7 +715,7 @@ export default function Home() {
                               return (
                                 <li
                                   key={category.id}
-                                  className="rounded-lg bg-white px-4 py-3 shadow-sm"
+                                  className="rounded-lg bg-white px-4 py-3 "
                                 >
                                   <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
                                     <div className="sm:max-w-[70%]">

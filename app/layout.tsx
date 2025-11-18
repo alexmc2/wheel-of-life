@@ -16,6 +16,11 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: 'Wheel of Life',
   description: 'A tool for self-reflection and personal growth',
+  icons: {
+    icon: [{ url: '/wheel.svg', type: 'image/svg+xml' }],
+    shortcut: ['/wheel.svg'],
+    apple: ['/wheel.svg'],
+  },
 };
 
 export default function RootLayout({
